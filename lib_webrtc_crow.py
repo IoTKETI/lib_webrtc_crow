@@ -10,6 +10,7 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.chrome.service import Service
 import paho.mqtt.client as mqtt
 from pyvirtualdisplay import Display
+from pyvirtualdisplay.smartdisplay import SmartDisplay
 import os
 import sys
 import time
@@ -50,13 +51,18 @@ def openWeb(url):
 
     with Display(visible=False, size=(1920, 1080)) as disp:
         print('xvfb:', os.environ['DISPLAY'])
-        with Display(visible=True, size=(1920, 1080)) as v_disp:
+        with SmartDisplay(visible=True, size=(1920, 1080)) as v_disp:
             print('xephyr', os.environ['DISPLAY'])
             driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options, 
-                                      desired_capabilities=capabilities)
+                                  desired_capabilities=capabilities)
 
             print(url)
             driver.get(url)
+            import pyautogui
+            pyautogui.press('F12')
+            time.sleep(3)
+            img = v_disp.waitgrab()
+            img.save('screenshot.png')
             control_web()
 
 
@@ -65,7 +71,7 @@ def control_web():
     global port
     global sendSource
 
-    msw_mqtt_connect(broker_ip)
+    #msw_mqtt_connect(broker_ip)
 
     if sendSource[1] == 'screen' or sendSource[1] == 'window':
         import pyautogui
@@ -152,18 +158,24 @@ if __name__ == '__main__':
     gcs = argv[3]  # argv[3]  # {{GCS_Name}} : "gcs_name"
     # argv[4] # {{Source}} : "camera=webcam" or "camera1=rtsp-rtsp://192.168.1.1/stream0" or "camera2=screen"
     Source = argv[4]
+    streamId = argv[5]
 
-    webRtcUrl = webRtcUrl + host + '/drone?id=' + drone + '&gcs=' + gcs
+    webRtcUrl = webRtcUrl + host + '?id=' + drone + '&gcs=' + gcs
 
-    sendSource = Source.split('=')
+    sendSource = Source
 
-    if sendSource[1] == 'webcam':
+    if sendSource == 'webcam':
         webRtcUrl = webRtcUrl + '&audio=true'
-    elif sendSource[1] == 'screen' or sendSource[1] == 'window':
-        webRtcUrl = webRtcUrl + '&sendSource=' + sendSource[1] + '&audio=true'
-    elif 'rtsp' in sendSource[1]:
+    elif sendSource == 'screen' or sendSource == 'window':
+        webRtcUrl = webRtcUrl + '&sendSource=' + sendSource + '&audio=true'
+    elif 'rtsp' in sendSource:
         rtspUrl = sendSource[1].split('-')[1]
         webRtcUrl = webRtcUrl + '&rtspUrl=' + rtspUrl + '&audio=true'
+    elif sendSource == 'mjpeg':
+        port = argv[6]
+        topic = argv[7]
+        compressed = argv[8]
+        webRtcUrl = webRtcUrl + '&canvas=true&port='+port+'&topic='+topic+'&compressed='+compressed+'&streamId='+streamId
     else:
         webRtcUrl = webRtcUrl + '&audio=true'
 
