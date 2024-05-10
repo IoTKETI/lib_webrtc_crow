@@ -14,6 +14,7 @@ from pyvirtualdisplay.smartdisplay import SmartDisplay
 import os
 import sys
 import time
+import subprocess
 
 drone = ''
 host = ''
@@ -40,6 +41,8 @@ def openWeb(url):
     chrome_options = Options()
     chrome_options.add_argument("--single-process")
     chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--allow-insecure-localhost")
+
 
     chrome_options.add_experimental_option("prefs", {
         "profile.default_content_setting_values.media_stream_mic": 1,
@@ -53,17 +56,20 @@ def openWeb(url):
         print('xvfb:', os.environ['DISPLAY'])
         with SmartDisplay(visible=True, size=(1920, 1080)) as v_disp:
             print('xephyr', os.environ['DISPLAY'])
-            driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options, 
+            driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver', log_path='./log'), options=chrome_options, 
                                   desired_capabilities=capabilities)
 
             print(url)
             driver.get(url)
-            import pyautogui
-            pyautogui.press('F12')
-            time.sleep(3)
-            img = v_disp.waitgrab()
-            img.save('screenshot.png')
-            control_web()
+            #import pyautogui
+            #pyautogui.press('F12')
+            #time.sleep(3)
+            #img = v_disp.waitgrab()
+            #img.save('screenshot.png')
+            #control_web()
+            while True:
+                for entry in driver.get_log('browser'):
+                    print(entry)
 
 
 def control_web():
@@ -175,6 +181,7 @@ if __name__ == '__main__':
         port = argv[6]
         topic = argv[7]
         compressed = argv[8]
+        #https://data.iotocean.org:7719/test?id=V60_1&streamId=camera2&gcs=KETI_GCS&canvas=true&port=8080&topic=/argus/ar0234_front_left/image_raw&compressed=true
         webRtcUrl = webRtcUrl + '&canvas=true&port='+port+'&topic='+topic+'&compressed='+compressed+'&streamId='+streamId
     else:
         webRtcUrl = webRtcUrl + '&audio=true'
