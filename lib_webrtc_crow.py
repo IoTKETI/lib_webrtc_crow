@@ -38,6 +38,7 @@ def openWeb(url):
     global display
     global driver
 
+
     with Display(visible=False, size=(1920, 1080)) as disp:
         print('xvfb:', os.environ['DISPLAY'])
         with Display(visible=True, size=(1920, 1080)) as v_disp:
@@ -55,7 +56,8 @@ def openWeb(url):
                     "profile.default_content_setting_values.media_stream_mic": 1,
                     "profile.default_content_setting_values.media_stream_camera": 1
                 })
-
+                chrome_options.add_argument("--use-fake-ui-for-media-stream")  # 권한 요청 자동 승인
+                
                 capabilities = DesiredCapabilities.CHROME
                 capabilities['goog:loggingPrefs'] = {'browser': 'ALL'}
 
@@ -74,21 +76,23 @@ def openWeb(url):
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--single-process")
         chrome_options.add_argument("--disable-dev-shm-usage")
-
+    
         chrome_options.add_experimental_option("prefs", {
             "profile.default_content_setting_values.media_stream_mic": 1,
             "profile.default_content_setting_values.media_stream_camera": 1
         })
-
+        chrome_options.add_argument("--use-fake-ui-for-media-stream")  # 권한 요청 자동 승인
+    
         capabilities = DesiredCapabilities.CHROME
         capabilities['goog:loggingPrefs'] = {'browser': 'ALL'}
-
+    
         driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options, desired_capabilities=capabilities)
+    '''
 
     print(url)
     driver.get(url)
     control_web()
-    '''
+
 
 def control_web():
     global broker_ip
@@ -97,19 +101,20 @@ def control_web():
 
     msw_mqtt_connect(broker_ip)
 
-    if sendSource[1] == 'screen' or sendSource[1] == 'window':
-        import pyautogui
-        time.sleep(5)
-        print('press key')
-        pyautogui.press('tab')
-        time.sleep(0.2)
-        pyautogui.press('tab')
-        time.sleep(0.2)
-        pyautogui.press('tab')
-        time.sleep(0.2)
-        pyautogui.press('tab')
-        time.sleep(0.2)
-        pyautogui.press('enter')
+    if len(sendSource) > 2:
+        if sendSource[1] == 'screen' or sendSource[1] == 'window':
+            import pyautogui
+            time.sleep(5)
+            print('press key')
+            pyautogui.press('tab')
+            time.sleep(0.2)
+            pyautogui.press('tab')
+            time.sleep(0.2)
+            pyautogui.press('tab')
+            time.sleep(0.2)
+            pyautogui.press('tab')
+            time.sleep(0.2)
+            pyautogui.press('enter')
 
     while True:
         pass
@@ -197,6 +202,9 @@ if __name__ == '__main__':
             webRtcUrl = webRtcUrl + '&rtspUrl=' + rtspUrl + '&audio=true'
         else:
             webRtcUrl = webRtcUrl + '&audio=true'
+    elif '7720' in host:
+        webRtcUrl = webRtcUrl + '/publisher?droneName=' + drone + '&gcsId=' + gcs + '&cameraName=camera'
+        # TODO: rtsp 연동
     else:
         webRtcUrl = webRtcUrl + '/pub?id=' + drone + '&gcs=' + gcs
 
